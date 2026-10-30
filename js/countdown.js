@@ -39,23 +39,30 @@
         return deadlines.sort((a, b) => a.iso.localeCompare(b.iso));
     }
 
-    function toEndOfDay(iso) {
+    function toDate(iso) {
         const [year, month, day] = iso.split('-').map(Number);
-        return new Date(year, month - 1, day, 23, 59, 59, 999);
+        return new Date(year, month - 1, day);
+    }
+
+    function targetFor(deadline) {
+        if (deadline.datetime) return new Date(deadline.datetime);
+        const end = toDate(deadline.iso);
+        end.setHours(23, 59, 59, 999);
+        return end;
     }
 
     function pickDeadline(deadlines) {
         const now = Date.now();
 
         for (let i = 0; i < deadlines.length; i += 1) {
-            const end = toEndOfDay(deadlines[i].iso);
-            if (end.getTime() >= now) {
-                return { date: end, title: deadlines[i].title };
+            const target = targetFor(deadlines[i]);
+            if (target.getTime() >= now) {
+                return { date: target, title: deadlines[i].title };
             }
         }
 
         const last = deadlines[deadlines.length - 1];
-        return { date: toEndOfDay(last.iso), title: last.title };
+        return { date: targetFor(last), title: last.title };
     }
 
     function pad(value) {
